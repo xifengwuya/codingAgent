@@ -1,0 +1,97 @@
+{
+  "name": "coding-agent-chat",
+  "displayName": "Coding Agent Chat",
+  "description": "A VS Code extension supporting both DeepSeek and Alibaba Cloud AI",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.108.1"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.setAiProvider",
+    "onCommand:extension.setDeepSeekToken",
+    "onCommand:extension.setAliyunApiKey",
+    "onCommand:extension.testCurrentApi",
+    "onCommand:extension.showChatPanel"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.setAiProvider",
+        "title": "Set AI Provider"
+      },
+      {
+        "command": "extension.setDeepSeekToken",
+        "title": "Set DeepSeek Token"
+      },
+      {
+        "command": "extension.setAliyunApiKey",
+        "title": "Set Aliyun API Key"
+      },
+      {
+        "command": "extension.testCurrentApi",
+        "title": "Test Current API"
+      },
+      {
+        "command": "extension.showChatPanel",
+        "title": "Open AI Chat Panel"
+      }
+    ],
+    "configuration": {
+      "title": "Coding Agent Chat",
+      "properties": {
+        "coding-agent-chat.provider": {
+          "type": "string",
+          "enum": [
+            "deepseek",
+            "aliyun",
+            "openai"
+          ],
+          "default": "aliyun",
+          "description": "选择AI服务提供商"
+        },
+        "coding-agent-chat.deepseekToken": {
+          "type": "string",
+          "default": "",
+          "description": "DeepSeek API Token",
+          "secret": true
+        },
+        "coding-agent-chat.aliyunApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "阿里云通义千问 API Key",
+          "secret": true
+        },
+        "coding-agent-chat.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "openai API Key",
+          "secret": true
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/node": "22.x",
+    "@types/vscode": "^1.108.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.2",
+    "vite": "^7.3.1"
+  }
+}

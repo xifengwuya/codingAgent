@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		// 新增：一次性编译任务（供调试启动时使用）
+		{
+			"type": "npm",
+			"script": "compile",
+			"problemMatcher": "$tsc",
+			"label": "tsc: compile",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		// 保留：监听编译任务（开发时手动执行）
+		{
+			"type": "npm",
+			"script": "watch",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"presentation": {
+				"reveal": "never"
+			},
+			"label": "tsc: watch"
+		}
+	]
+}
