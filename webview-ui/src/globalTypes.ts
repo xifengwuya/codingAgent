@@ -18,9 +18,11 @@ export type MessageType =
   | 'send-message' 
   | 'clear-messages'
   | 'config-data' 
+  | 'ai-service-error'
   | 'message-response'
   | 'messages-cleared'
-  | 'message-stream'; // 新增流式消息类型
+  | 'message-stream' // 新增流式消息类型
+  | 'panel-resize';
 
 export interface WebviewMessage {
   type: MessageType;
