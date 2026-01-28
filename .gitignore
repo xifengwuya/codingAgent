@@ -1,5 +1,18 @@
-out
-dist
-node_modules
-.vscode-test/
-*.vsix
+# TypeScript compiled output
+out/
+dist/
+lib/
+build/
+
+# Source maps
+*.map
+
+# TS build info
+*.tsbuildinfo
+
+# JavaScript files generated from TypeScript compilation
+**/*.js
+!src/**/*.js  # 保留源码中的js文件，排除特定目录
+
+# VSCode extension specific
+*.vsix  # 编译后的扩展包

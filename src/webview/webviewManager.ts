@@ -163,41 +163,37 @@ export class WebviewManager {
     }, 50);
   }
 
-  // WebviewManager.ts - getWebviewHtml 方法
-private getWebviewHtml(context: vscode.ExtensionContext): string {
-  // 1. 获取正确的 Webview 资源路径（核心：用 asWebviewUri 而非直接拼接）
-  const webviewUri = this.panel!.webview.asWebviewUri(
-    vscode.Uri.file(path.join(context.extensionPath, 'out/webview/react/bundle.js'))
-  );
+  // WebviewManager.ts 中生成 HTML 的方法
+  private getWebviewHtml(context: vscode.ExtensionContext) {
+    // 获取打包后的前端资源路径
+    const reactDir = vscode.Uri.file(
+      path.join(context.extensionPath, 'out/webview/react')
+    );
+    const reactUri = this.panel!.webview.asWebviewUri(reactDir);
 
-  // 2. HTML 模板（核心：原生调用 acquireVsCodeApi，不被Vite打包）
-  return `
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>AI 聊天面板</title>
-      <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: sans-serif; height: 100vh; overflow: hidden; }
-      </style>
-    </head>
-    <body>
-      <div id="root"></div>
-      <script>
-        // 🌟 核心修复：最先调用，全局挂载，不被Vite处理
-        window.vscode = acquireVsCodeApi();
-        // 注入扩展端配置（确保 initConfig 存在）
-        window.initConfig = {
-          provider: '${ConfigManager.getCurrentProvider()}',
-          proxyEnabled: ${ConfigManager.getProxyEnabled()}
-        };
-      </script>
-      <!-- 加载打包后的JS（用Webview安全URI） -->
-      <script src="${webviewUri}"></script>
-    </body>
-    </html>
-  `;
-  }
+    // 加载打包后的 index.html
+    return `
+      <!DOCTYPE html>
+      <html lang="zh-CN">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Coding Agent</title>
+      </head>
+      <body>
+        <div id="root"></div>
+        <script>
+          // 注入 VS Code API 到全局
+          window.vscode = acquireVsCodeApi();
+          // 注入初始配置
+          window.initConfig = ${JSON.stringify({
+            provider: ConfigManager.getCurrentProvider(),
+            proxyEnabled: ConfigManager.getProxyEnabled()
+          })};
+        </script>
+        <script src="${reactUri}/public.js"></script>
+      </body>
+      </html>
+    `;
+    }
 }

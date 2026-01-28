@@ -1,25 +1,26 @@
-// webview-ui/src/utils/vscodeApi.ts
 import React from 'react';
 import { InitConfig, MessageType } from '../globalTypes';
 
 /**
  * 封装VS Code API（适配全局 window.vscode）
+ * @returns { initConfig: 初始化配置, postVscodeMessage: 发送消息到扩展端, vscode: VS Code 原生 API }
  */
-export const createVscodeApi = () => {
-  // 🌟 核心修复：使用扩展端注入的全局 vscode 对象
+export const createVscodeApi = (): {
+  initConfig: InitConfig;
+  postVscodeMessage: (type: MessageType, data?: Record<string, any>) => void;
+  vscode: any;
+} => {
   const vscode = window.vscode;
   if (!vscode) {
     throw new Error('VS Code API 未初始化，请在VS Code中运行');
   }
 
-  // 合并配置（扩展端已注入 window.initConfig）
   const initConfig: InitConfig = {
     provider: 'deepseek',
     proxyEnabled: false,
     ...window.initConfig
   };
 
-  // 发送消息（直接使用原生 API）
   const postVscodeMessage = (type: MessageType, data: Record<string, any> = {}) => {
     vscode.postMessage({ type, ...data });
   };
@@ -31,7 +32,10 @@ export const createVscodeApi = () => {
   };
 };
 
-// 保留原有 useVscodeMessageListener Hook
+/**
+ * 监听扩展端发送的消息
+ * @param callback 消息处理回调函数
+ */
 export const useVscodeMessageListener = (
   callback: (message: { type: MessageType; data: any }) => void
 ) => {

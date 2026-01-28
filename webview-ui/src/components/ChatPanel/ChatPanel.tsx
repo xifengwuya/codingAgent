@@ -1,14 +1,23 @@
-import React, { useState, useEffect } from 'react';
-// 🌟 导入.ts类型文件
+import React, { useState, useEffect, useRef } from 'react';
 import { Message } from '../../globalTypes';
 import { createVscodeApi, useVscodeMessageListener } from '../../utils/vscodeApi';
+import MessageItem from '../MessageItem';
+import { COLORS, SIZES, ANIMATIONS, KEYFRAMES } from '../../constants/style';
 
 const ChatPanel = () => {
   const { initConfig, postVscodeMessage } = createVscodeApi();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isClearBtnHover, setIsClearBtnHover] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isSendBtnHover, setIsSendBtnHover] = useState(false);
+  
   const trimmedContent = inputValue.trim();
+  const messageContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // 监听扩展端消息
   useVscodeMessageListener((message) => {
     console.log('前端收到扩展端消息：', message.type);
     
@@ -18,19 +27,12 @@ const ChatPanel = () => {
         break;
       
       case 'message-response':
-        if (
-          message.data && 
-          typeof message.data === 'object' && 
-          'id' in message.data &&
-          'content' in message.data &&
-          'role' in message.data
-        ) {
+        setIsSending(false);
+        if (message.data && typeof message.data === 'object' && 'id' in message.data) {
           const aiMessage = message.data as Message;
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id.startsWith('loading_') ? aiMessage : msg
-            )
-          );
+          setMessages(prev => prev.map(msg => 
+            msg.id.startsWith('loading_') ? aiMessage : msg
+          ));
         }
         break;
       
@@ -43,13 +45,24 @@ const ChatPanel = () => {
     }
   });
 
+  // 初始化 + 输入框聚焦
   useEffect(() => {
     postVscodeMessage('request-config');
+    if (inputRef.current) inputRef.current.focus();
   }, [postVscodeMessage]);
 
-  const handleSend = () => {
-    if (!trimmedContent) return;
+  // 消息自动滚动
+  useEffect(() => {
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
 
+  // 发送消息
+  const handleSend = () => {
+    if (!trimmedContent || isSending) return;
+
+    setIsSending(true);
     const userMsg: Message = {
       id: `user_${Date.now()}`,
       content: trimmedContent,
@@ -73,11 +86,14 @@ const ChatPanel = () => {
     setInputValue('');
   };
 
+  // 清空消息
   const handleClear = () => {
     postVscodeMessage('clear-messages');
     setMessages([]);
+    if (inputRef.current) inputRef.current.focus();
   };
 
+  // 格式化时间
   const formatTime = (timestamp: number) => {
     if (!timestamp) return '';
     return new Date(timestamp).toLocaleTimeString('zh-CN', {
@@ -89,73 +105,92 @@ const ChatPanel = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', height: '100%', boxSizing: 'border-box' }}>
+    <div style={{
+      padding: `${SIZES.padding}px`,
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      height: '100%',
+      boxSizing: 'border-box',
+      backgroundColor: COLORS.white,
+    }}>
+      {/* 注入动画 keyframes */}
+      <style>{KEYFRAMES}</style>
+
+      {/* 清空按钮 */}
       <button 
         onClick={handleClear}
-        style={{ marginBottom: '10px', padding: '4px 8px', cursor: 'pointer' }}
+        onMouseEnter={() => setIsClearBtnHover(true)}
+        onMouseLeave={() => setIsClearBtnHover(false)}
+        style={{
+          marginBottom: `${SIZES.padding}px`,
+          padding: '6px 12px',
+          cursor: 'pointer',
+          border: `1px solid ${COLORS.grayBorder}`,
+          borderRadius: SIZES.borderRadius,
+          backgroundColor: isClearBtnHover ? COLORS.grayLight : COLORS.white,
+          color: isClearBtnHover ? COLORS.black : COLORS.grayText,
+          fontSize: 12,
+          transition: 'all 0.2s ease',
+        }}
       >
         清空消息
       </button>
       
+      {/* 消息容器 */}
       <div 
-        style={{ 
-          height: 'calc(100vh - 120px)', 
-          border: '1px solid #eee', 
-          padding: '10px', 
-          marginBottom: '10px',
+        ref={messageContainerRef}
+        style={{
+          height: 'calc(100vh - 140px)',
+          border: `1px solid ${COLORS.grayBorder}`,
+          padding: `${SIZES.padding}px`,
+          marginBottom: `${SIZES.padding}px`,
           overflowY: 'auto',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          borderRadius: SIZES.borderRadius,
+          backgroundColor: COLORS.white,
+          scrollBehavior: 'smooth',
         }}
       >
         {messages.length === 0 ? (
-          <div style={{ color: '#999', textAlign: 'center', padding: '40px 20px' }}>
-            请输入问题，开始与AI对话
-            <div style={{ marginTop: 8, fontSize: 12 }}>当前服务商：{initConfig.provider}</div>
+          <div style={{
+            color: COLORS.grayPlaceholder,
+            textAlign: 'center',
+            padding: '60px 20px',
+            animation: ANIMATIONS.fadeIn,
+          }}>
+            <div style={{
+              fontSize: 20,
+              marginBottom: 16,
+              color: COLORS.primary,
+            }}>
+              🤖 Coding Agent
+            </div>
+            <div style={{ fontSize: 14, marginBottom: 8 }}>
+              请输入编程问题，我会尽力解答
+            </div>
+            <div style={{ fontSize: 12, color: COLORS.grayText }}>
+              当前服务商：{initConfig.provider}
+            </div>
           </div>
         ) : (
           messages.map(msg => (
-            <div 
-              key={msg.id}
-              style={{ 
-                margin: '8px 0', 
-                padding: '8px 12px',
-                backgroundColor: msg.role === 'user' ? '#e6f7ff' : '#f5f5f5',
-                borderRadius: '6px',
-                maxWidth: '80%',
-                marginLeft: msg.role === 'user' ? 'auto' : 0,
-                boxSizing: 'border-box'
-              }}
-            >
-              <div style={{ 
-                fontWeight: '600', 
-                fontSize: 14,
-                marginBottom: 4
-              }}>
-                {msg.role === 'user' ? '你' : 'AI'}
-                <span style={{ 
-                  fontWeight: 'normal', 
-                  color: '#999', 
-                  marginLeft: '8px',
-                  fontSize: 12
-                }}>
-                  {formatTime(msg.timestamp)}
-                </span>
-              </div>
-              <div style={{ 
-                marginTop: '4px', 
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
-                fontSize: 14
-              }}>
-                {msg.content}
-              </div>
-            </div>
+            <MessageItem 
+              key={msg.id} 
+              message={msg} 
+              formatTime={formatTime} 
+            />
           ))
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', boxSizing: 'border-box' }}>
+      {/* 输入框 + 发送按钮 */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+      }}>
         <input 
+          ref={inputRef}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => {
@@ -164,31 +199,44 @@ const ChatPanel = () => {
               handleSend();
             }
           }}
+          onFocus={() => setIsInputFocused(true)}
+          onBlur={() => setIsInputFocused(false)}
           placeholder={`输入问题后按回车发送（当前：${initConfig.provider}）`}
-          style={{ 
-            flex: 1, 
-            padding: '10px 12px', 
-            border: '1px solid #ddd', 
-            borderRadius: '6px',
+          style={{
+            flex: 1,
+            height: SIZES.inputHeight,
+            padding: `0 ${SIZES.padding}px`,
+            border: `1px solid ${isInputFocused ? COLORS.primary : COLORS.grayBorder}`,
+            borderRadius: SIZES.borderRadius,
             outline: 'none',
-            fontSize: 14
+            fontSize: 14,
+            color: COLORS.black,
+            backgroundColor: COLORS.white,
+            boxShadow: isInputFocused ? `0 0 0 2px rgba(0, 120, 212, 0.1)` : 'none',
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
           }}
-          autoFocus
+          disabled={isSending}
         />
         <button 
           onClick={handleSend} 
-          disabled={!trimmedContent}
-          style={{ 
-            padding: '10px 20px', 
-            backgroundColor: !trimmedContent ? '#ccc' : '#0078d4',
-            color: 'white',
+          onMouseEnter={() => setIsSendBtnHover(true)}
+          onMouseLeave={() => setIsSendBtnHover(false)}
+          disabled={!trimmedContent || isSending}
+          style={{
+            height: SIZES.buttonHeight,
+            padding: `0 ${SIZES.padding * 1.5}px`,
+            backgroundColor: (!trimmedContent || isSending) 
+              ? COLORS.grayLight 
+              : (isSendBtnHover ? COLORS.primaryHover : COLORS.primary),
+            color: COLORS.white,
             border: 'none',
-            borderRadius: '6px',
-            cursor: !trimmedContent ? 'not-allowed' : 'pointer',
-            fontSize: 14
+            borderRadius: SIZES.borderRadius,
+            cursor: (!trimmedContent || isSending) ? 'not-allowed' : 'pointer',
+            fontSize: 14,
+            transition: 'background-color 0.2s ease',
           }}
         >
-          发送
+          {isSending ? '发送中...' : '发送'}
         </button>
       </div>
     </div>
