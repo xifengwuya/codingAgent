@@ -1,21 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true, // 跳过所有第三方库的类型检查（核心修复）
-    "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client", "node"],
-    "paths": {
-      "#types/*": ["./node_modules/vite/dist/node/types/*"]
-    },
-    // 新增：忽略特定库的类型错误
-    "ignoreDeprecations": "5.0",
-    "noErrorTruncation": true
+    "outDir": "./out", // 编译产物输出到out目录，匹配package.json的main
+    "module": "commonjs", // 扩展端(Node.js)必须用commonjs，核心不可改
+    "target": "ES2020", // 适配Node.js和VS Code内置环境
+    "moduleResolution": "node", // 核心修复：替换bundler为node，匹配commonjs
+    "strict": true, // 严格类型检查，推荐保留
+    "esModuleInterop": true, // 兼容CommonJS/ES模块互操作，推荐保留
+    "skipLibCheck": true, // 跳过第三方库类型检查，避免无关报错
+    "forceConsistentCasingInFileNames": true, // 强制文件名大小写一致
+    "types": ["node", "vscode"], // 仅保留Node.js和VS Code的类型，移除vite/client（扩展端无需）
+    "noErrorTruncation": true // 完整显示错误信息，方便调试
   },
-  "include": ["src/**/*"], // 移除 vite.config.ts，不检查配置文件
-  "exclude": ["node_modules", "vite.config.ts"] // 排除配置文件的类型检查
+  "include": ["src/**/*"], // 仅编译扩展端的src目录代码
+  "exclude": ["node_modules", "webview-ui/**/*"] // 排除node_modules和前端webview-ui目录
 }

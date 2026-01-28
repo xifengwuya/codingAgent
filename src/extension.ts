@@ -5,7 +5,7 @@ import { ApiServiceProvider } from './services/apiServiceProvider';
 import { ConfigManager } from './services/configManager';
 import { testProxy } from './services/testProxy';
 import { WebviewManager } from './webview/webviewManager';
-
+process.noDeprecation = true; // 禁用弃用警告
 export function activate(context: vscode.ExtensionContext) {
   // 设置 AI 服务提供商
   const setProviderCmd = vscode.commands.registerCommand(
@@ -87,15 +87,15 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // 打开聊天面板命令
+  // src/extension.ts 中 showChatPanelCmd 部分
   const showChatPanelCmd = vscode.commands.registerCommand(
     'extension.showChatPanel',
     async () => {
       try {
-        // 强制延迟100ms（避免扩展进程未就绪）
         await new Promise(resolve => setTimeout(resolve, 100));
         const webviewManager = WebviewManager.getInstance();
-        webviewManager.showPanel(context);
-        vscode.window.showInformationMessage('正在打开AI编程助手面板...'); // 增加提示，确认命令触发
+        webviewManager.showPanel(context); // 确保传递了 extension context
+        vscode.window.showInformationMessage('正在打开AI编程助手面板...');
       } catch (error) {
         vscode.window.showErrorMessage(`打开聊天面板失败: ${(error as Error).message}`);
         console.error('面板打开失败:', error);
